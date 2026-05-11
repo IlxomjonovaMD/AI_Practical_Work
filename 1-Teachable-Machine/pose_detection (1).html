@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ko'p Kishilik Poza Tizimi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #2a2a3a;
+    --accent-left: #00e5ff;
+    --accent-right: #ff4081;
+    --text: #e8e8f0;
+    --dim: #6666aa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  header h1 span.left { color: var(--accent-left); }
+  header h1 span.right { color: var(--accent-right); }
+
+  .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    letter-spacing: 0.05em;
+  }
+
+  .main {
+    display: flex;
+    gap: 24px;
+    padding: 32px;
+    width: 100%;
+    max-width: 1200px;
+    align-items: flex-start;
+  }
+
+  .video-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+  }
+
+  canvas#canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 420px;
+    object-fit: cover;
+  }
+
+  .overlay-labels {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .zone-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  .zone-label.left-zone {
+    background: rgba(0,229,255,0.15);
+    border: 1px solid var(--accent-left);
+    color: var(--accent-left);
+  }
+
+  .zone-label.right-zone {
+    background: rgba(255,64,129,0.15);
+    border: 1px solid var(--accent-right);
+    color: var(--accent-right);
+  }
+
+  .btn-start {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, var(--accent-left), #0088cc);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: opacity 0.2s, transform 0.1s;
+    width: 100%;
+  }
+
+  .btn-start:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-start:active { transform: translateY(0); }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .panels {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 260px;
+  }
+
+  .person-panel {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .person-panel h3 {
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .dot.left { background: var(--accent-left); box-shadow: 0 0 8px var(--accent-left); }
+  .dot.right { background: var(--accent-right); box-shadow: 0 0 8px var(--accent-right); }
+
+  .pose-display {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    min-height: 40px;
+    transition: all 0.3s;
+  }
+
+  .pose-display.left-color { color: var(--accent-left); }
+  .pose-display.right-color { color: var(--accent-right); }
+
+  .confidence-bar-wrap {
+    background: var(--bg);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .confidence-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .confidence-bar.left { background: var(--accent-left); }
+  .confidence-bar.right { background: var(--accent-right); }
+
+  .conf-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+  }
+
+  .all-classes {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .class-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--dim);
+  }
+
+  .class-row .mini-bar-wrap {
+    flex: 1;
+    margin: 0 8px;
+    height: 3px;
+    background: var(--bg);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .class-row .mini-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .status-bar {
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 32px 24px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    display: flex;
+    gap: 20px;
+  }
+
+  .status-item { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #44ff88; }
+  .status-dot.inactive { background: var(--dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="left">CHAP</span> + <span class="right">O'NG</span> — Poza Tizimi</h1>
+  <span class="badge">TEACHABLE MACHINE</span>
+  <span class="badge">TENSORFLOW.JS</span>
+</header>
+
+<div class="main">
+  <div class="video-section">
+    <div class="canvas-wrapper">
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <div class="overlay-labels">
+        <div class="zone-label left-zone">◀ CHAP SHAXS</div>
+        <div class="zone-label right-zone">O'NG SHAXS ▶</div>
+      </div>
+    </div>
+    <button class="btn-start" id="startBtn" onclick="init()">▶ KAMERANI ISHGA TUSHIRISH</button>
+  </div>
+
+  <div class="panels">
+    <!-- LEFT PERSON -->
+    <div class="person-panel">
+      <h3><span class="dot left"></span> CHAP SHAXS</h3>
+      <div class="pose-display left-color" id="leftPose">—</div>
+      <div class="confidence-bar-wrap">
+        <div class="confidence-bar left" id="leftBar"></div>
+      </div>
+      <div class="conf-label" id="leftConf">Ishonch: —</div>
+      <div class="all-classes" id="leftClasses"></div>
+    </div>
+
+    <!-- RIGHT PERSON -->
+    <div class="person-panel">
+      <h3><span class="dot right"></span> O'NG SHAXS</h3>
+      <div class="pose-display right-color" id="rightPose">—</div>
+      <div class="confidence-bar-wrap">
+        <div class="confidence-bar right" id="rightBar"></div>
+      </div>
+      <div class="conf-label" id="rightConf">Ishonch: —</div>
+      <div class="all-classes" id="rightClasses"></div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item">
+    <div class="status-dot inactive" id="camDot"></div>
+    <span id="camStatus">Kamera: O'chiq</span>
+  </div>
+  <div class="status-item">
+    <div class="status-dot inactive" id="modelDot"></div>
+    <span id="modelStatus">Model: Yuklanmagan</span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+<script>
+  const MODEL_URL = "https://teachablemachine.withgoogle.com/models/vRrgYUZmh/";
+
+  let model, webcam, ctx, maxPredictions;
+  const canvas = document.getElementById("canvas");
+  ctx = canvas.getContext("2d");
+
+  // Pose emoji mapping
+  const poseEmoji = {
+    "Left_Wave": "👋 WAVE",
+    "Right_Wave": "👋 WAVE",
+    "Left_Stand": "🧍 TURGAN",
+    "Right_Stand": "🧍 TURGAN"
+  };
+
+  async function init() {
+    const btn = document.getElementById("startBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Yuklanmoqda...";
+
+    try {
+      const modelURL = MODEL_URL + "model.json";
+      const metadataURL = MODEL_URL + "metadata.json";
+
+      model = await tmPose.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+
+      document.getElementById("modelDot").classList.remove("inactive");
+      document.getElementById("modelStatus").textContent = "Model: Tayyor ✓";
+
+      webcam = new tmPose.Webcam(640, 480, true);
+      await webcam.setup();
+      await webcam.play();
+
+      document.getElementById("camDot").classList.remove("inactive");
+      document.getElementById("camStatus").textContent = "Kamera: Yoqiq ✓";
+
+      btn.textContent = "✅ ISHLAMOQDA";
+
+      window.requestAnimationFrame(loop);
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = "⚠️ Xato — Qayta urinish";
+      console.error(e);
+    }
+  }
+
+  async function loop() {
+    webcam.update();
+    await predict();
+    window.requestAnimationFrame(loop);
+  }
+
+  async function predict() {
+    const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+    const predictions = await model.predict(posenetOutput);
+
+    // Draw webcam
+    ctx.drawImage(webcam.canvas, 0, 0, canvas.width, canvas.height);
+
+    // Draw skeleton if pose found
+    if (pose) {
+      drawPose(pose);
+    }
+
+    // Split predictions into LEFT and RIGHT
+    const leftPreds = predictions.filter(p => p.className.startsWith("Left_"));
+    const rightPreds = predictions.filter(p => p.className.startsWith("Right_"));
+
+    updatePanel("left", leftPreds);
+    updatePanel("right", rightPreds);
+  }
+
+  function updatePanel(side, preds) {
+    if (!preds.length) return;
+
+    const top = preds.reduce((a, b) => a.probability > b.probability ? a : b);
+    const conf = Math.round(top.probability * 100);
+    const label = poseEmoji[top.className] || top.className;
+
+    if (side === "left") {
+      document.getElementById("leftPose").textContent = conf > 40 ? label : "—";
+      document.getElementById("leftBar").style.width = conf + "%";
+      document.getElementById("leftConf").textContent = `Ishonch: ${conf}%`;
+      updateMiniClasses("leftClasses", preds, "#00e5ff");
+    } else {
+      document.getElementById("rightPose").textContent = conf > 40 ? label : "—";
+      document.getElementById("rightBar").style.width = conf + "%";
+      document.getElementById("rightConf").textContent = `Ishonch: ${conf}%`;
+      updateMiniClasses("rightClasses", preds, "#ff4081");
+    }
+  }
+
+  function updateMiniClasses(containerId, preds, color) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+    preds.forEach(p => {
+      const pct = Math.round(p.probability * 100);
+      const shortName = p.className.replace("Left_", "").replace("Right_", "");
+      container.innerHTML += `
+        <div class="class-row">
+          <span>${shortName}</span>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar" style="width:${pct}%; background:${color}"></div>
+          </div>
+          <span>${pct}%</span>
+        </div>`;
+    });
+  }
+
+  function drawPose(pose) {
+    if (pose.score < 0.2) return;
+    const keypoints = pose.keypoints;
+
+    // Skeleton connections
+    const adj = [
+      [5,6],[5,7],[7,9],[6,8],[8,10],
+      [5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]
+    ];
+
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.lineWidth = 2;
+    adj.forEach(([a, b]) => {
+      const kpA = keypoints[a], kpB = keypoints[b];
+      if (kpA.score > 0.3 && kpB.score > 0.3) {
+        ctx.beginPath();
+        ctx.moveTo(kpA.position.x, kpA.position.y);
+        ctx.lineTo(kpB.position.x, kpB.position.y);
+        ctx.stroke();
+      }
+    });
+
+    keypoints.forEach(kp => {
+      if (kp.score > 0.3) {
+        ctx.beginPath();
+        ctx.arc(kp.position.x, kp.position.y, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = "#00e5ff";
+        ctx.fill();
+      }
+    });
+  }
+</script>
+</body>
+</html>
